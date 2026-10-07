@@ -1,8 +1,6 @@
-const mysql = require('mysql2/promise');
-const config = require('./server/db');
+import pool from './server/db.js';
 
 async function run() {
-  const pool = mysql.createPool(config);
   try {
     console.log('Adding snmp_version and os_version to routers table...');
     
@@ -26,7 +24,7 @@ async function run() {
   } catch (err) {
     console.error('Migration failed:', err.message);
   } finally {
-    await pool.end();
+    process.exit(0);
   }
 }
 
