@@ -25,7 +25,7 @@ export default function Routers() {
   useEffect(() => {
     fetchRouters();
     const fetchStats = () => {
-      fetch('http://localhost:3001/api/routers/stats')
+      fetch('/api/routers/stats')
         .then(res => res.json())
         .then(data => setStats(data))
         .catch(err => console.error(err));
@@ -36,14 +36,14 @@ export default function Routers() {
   }, []);
 
   const fetchRouters = async () => {
-    const res = await fetch('http://localhost:3001/api/routers');
+    const res = await fetch('/api/routers');
     const data = await res.json();
     setRouters(data);
   };
 
   const deleteRouter = async (id) => {
     if (confirm('Are you sure you want to delete this router?')) {
-      await fetch(`http://localhost:3001/api/routers/${id}`, { method: 'DELETE' });
+      await fetch(`/api/routers/${id}`, { method: 'DELETE' });
       fetchRouters();
     }
   };
@@ -51,7 +51,7 @@ export default function Routers() {
   const handleTestConnection = async () => {
     setTestStatus('testing');
     try {
-      const res = await fetch('http://localhost:3001/api/routers/test', {
+      const res = await fetch('/api/routers/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -77,7 +77,7 @@ export default function Routers() {
       return;
     }
     
-    await fetch('http://localhost:3001/api/routers', {
+    await fetch('/api/routers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
@@ -100,7 +100,7 @@ export default function Routers() {
     setIsSyncing(true);
     
     try {
-      const res = await fetch(`http://localhost:3001/api/routers/${router.id}/interfaces/sync`);
+      const res = await fetch(`/api/routers/${router.id}/interfaces/sync`);
       const data = await res.json();
       if (data.success && data.interfaces) {
         setSyncInterfaces(data.interfaces);
@@ -117,7 +117,7 @@ export default function Routers() {
   const submitInterfacesForMonitoring = async () => {
     if (!selectedRouter) return;
     try {
-      await fetch(`http://localhost:3001/api/routers/${selectedRouter.id}/interfaces`, {
+      await fetch(`/api/routers/${selectedRouter.id}/interfaces`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ interfaces: selectedInterfaces })

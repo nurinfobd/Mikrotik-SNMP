@@ -19,7 +19,7 @@ export default function Login() {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:3001/api/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -57,7 +57,7 @@ export default function Login() {
     setError('');
     
     try {
-      const res = await fetch('http://localhost:3001/api/auth/change-password', {
+      const res = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, oldPassword: password, newPassword })
@@ -69,7 +69,7 @@ export default function Login() {
       }
 
       // Password changed, login again automatically
-      const loginRes = await fetch('http://localhost:3001/api/auth/login', {
+      const loginRes = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password: newPassword })

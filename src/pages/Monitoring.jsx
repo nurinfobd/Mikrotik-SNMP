@@ -21,13 +21,13 @@ export default function Monitoring() {
   const [routers, setRouters] = useState([]);
 
   const fetchInterfaces = () => {
-    fetch('http://localhost:3001/api/interfaces')
+    fetch('/api/interfaces')
       .then(res => res.json())
       .then(data => setInterfaces(data));
   };
 
   const fetchRouters = () => {
-    fetch('http://localhost:3001/api/routers')
+    fetch('/api/routers')
       .then(res => res.json())
       .then(data => setRouters(data));
   };
@@ -39,7 +39,7 @@ export default function Monitoring() {
 
     // Poll backend for real-time traffic history every 5 seconds
     const fetchTraffic = () => {
-      fetch('http://localhost:3001/api/traffic/history')
+      fetch('/api/traffic/history')
         .then(res => res.json())
         .then(data => setTrafficHistory(data));
     };
@@ -57,7 +57,7 @@ export default function Monitoring() {
         ? `?period=custom&startDate=${appliedStartDate}&endDate=${appliedEndDate}`
         : `?period=${historicalTab}`;
         
-      fetch(`http://localhost:3001/api/interfaces/${historicalGraph.id}/historical${queryParams}`)
+      fetch(`/api/interfaces/${historicalGraph.id}/historical${queryParams}`)
         .then(res => res.json())
         .then(data => setHistoricalData(data))
         .catch(err => setHistoricalData([]));
@@ -172,7 +172,7 @@ export default function Monitoring() {
     if (!editingMax) return;
     
     try {
-      await fetch(`http://localhost:3001/api/interfaces/${editingMax.id}/update`, {
+      await fetch(`/api/interfaces/${editingMax.id}/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ max_traffic: maxValue || null, description: descriptionValue || null })
@@ -189,7 +189,7 @@ export default function Monitoring() {
     if (!window.confirm('Are you sure you want to remove this interface from Monitoring?')) return;
     
     try {
-      await fetch(`http://localhost:3001/api/interfaces/${id}/unmonitor`, { method: 'POST' });
+      await fetch(`/api/interfaces/${id}/unmonitor`, { method: 'POST' });
       fetchInterfaces();
     } catch (err) {
       alert('Error removing interface');

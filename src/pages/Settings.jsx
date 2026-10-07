@@ -19,20 +19,20 @@ export default function Settings() {
   }, []);
 
   const fetchAlerts = () => {
-    fetch('http://localhost:3001/api/telegram-alerts')
+    fetch('/api/telegram-alerts')
       .then(res => res.json())
       .then(data => setAlerts(data));
   };
 
   const fetchRouters = () => {
-    fetch('http://localhost:3001/api/routers')
+    fetch('/api/routers')
       .then(res => res.json())
       .then(data => setRouters(data));
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    await fetch('http://localhost:3001/api/telegram-alerts', {
+    await fetch('/api/telegram-alerts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
@@ -43,7 +43,7 @@ export default function Settings() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this alert profile?')) return;
-    await fetch(`http://localhost:3001/api/telegram-alerts/${id}`, { method: 'DELETE' });
+    await fetch(`/api/telegram-alerts/${id}`, { method: 'DELETE' });
     fetchAlerts();
   };
 

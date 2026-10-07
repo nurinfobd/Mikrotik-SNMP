@@ -9,12 +9,12 @@ export default function Dashboard() {
   const [trafficHistory, setTrafficHistory] = useState({});
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/routers').then(res => res.json()).then(setRouters);
-    fetch('http://localhost:3001/api/interfaces').then(res => res.json()).then(setInterfaces);
+    fetch('/api/routers').then(res => res.json()).then(setRouters);
+    fetch('/api/interfaces').then(res => res.json()).then(setInterfaces);
     
     const pollData = () => {
-      fetch('http://localhost:3001/api/routers/stats').then(res => res.json()).then(setRouterStats);
-      fetch('http://localhost:3001/api/traffic/history').then(res => res.json()).then(setTrafficHistory);
+      fetch('/api/routers/stats').then(res => res.json()).then(setRouterStats);
+      fetch('/api/traffic/history').then(res => res.json()).then(setTrafficHistory);
     };
     pollData();
     const interval = setInterval(pollData, 5000);

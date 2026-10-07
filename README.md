@@ -6,7 +6,7 @@ This guide provides step-by-step instructions to deploy the MikSNMP Portal (Fron
 
 ## 1. Initial Server Setup & Dependencies
 
-First, update your server and install the necessary dependencies: Node.js, MySQL, Nginx, and PM2.
+First, update your server and install the necessary dependencies: Node.js, MySQL, Apache, and PM2.
 
 ```bash
 # Update package lists
@@ -19,8 +19,8 @@ sudo apt install -y nodejs
 # Install MySQL Server
 sudo apt install -y mysql-server
 
-# Install Nginx
-sudo apt install -y nginx
+# Install Apache
+sudo apt install -y apache2
 
 # Install PM2 globally (Process Manager for Node.js)
 sudo npm install -g pm2
@@ -113,65 +113,138 @@ pm2 startup
 ```
 Your backend API should now be running on `http://localhost:3001`.
 
-## 7. Configure Nginx
+## 7. Configure Apache
 
-Nginx will serve the compiled React app (`dist` folder) and proxy `/api` requests to the Node.js backend.
+Apache will serve the compiled React app (`dist` folder) and proxy `/api` requests to the Node.js backend.
 
-Create a new Nginx configuration file:
+First, enable the required Apache modules for proxying and URL rewriting:
 
 ```bash
-sudo nano /etc/nginx/sites-available/miksnmp
+sudo a2enmod proxy proxy_http rewrite
+sudo systemctl restart apache2
+```
+
+Create a new Apache virtual host configuration file:
+
+```bash
+sudo nano /etc/apache2/sites-available/miksnmp.conf
 ```
 
 Paste the following configuration (Replace `your_domain_or_ip` with your server's public IP address or domain name):
 
-```nginx
-server {
-    listen 80;
-    server_name your_domain_or_ip;
+```apache
+<VirtualHost *:80>
+    ServerName miksnmp.teamzero.bd
 
     # Serve the React Frontend
-    root /var/www/miksnmp/dist;
-    index index.html;
+    DocumentRoot /var/www/miksnmp/dist
 
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
+    <Directory /var/www/miksnmp/dist>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+        
+        # Rewrite routing for React Router
+        RewriteEngine On
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule ^ index.html [QSA,L]
+    </Directory>
 
     # Proxy API requests to Node Backend
-    location /api/ {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
+    ProxyPreserveHost On
+    ProxyPass /api/ http://localhost:3001/api/
+    ProxyPassReverse /api/ http://localhost:3001/api/
+
+    ErrorLog ${APACHE_LOG_DIR}/miksnmp_error.log
+    CustomLog ${APACHE_LOG_DIR}/miksnmp_access.log combined
+</VirtualHost>
 ```
 
-Enable the site and restart Nginx:
+Enable the site and restart Apache:
 
 ```bash
 # Enable the site configuration
-sudo ln -s /etc/nginx/sites-available/miksnmp /etc/nginx/sites-enabled/
+sudo a2ensite miksnmp.conf
 
-# Remove default nginx config to prevent conflicts
-sudo rm /etc/nginx/sites-enabled/default
+# Test Apache config for syntax errors
+sudo apache2ctl configtest
 
-# Test Nginx config for syntax errors
-sudo nginx -t
-
-# Restart Nginx
-sudo systemctl restart nginx
+# Restart Apache
+sudo systemctl restart apache2
 ```
 
 ## 8. Done!
 You can now visit your server's IP address or domain in your web browser.
-- **URL**: `http://your_server_ip`
+- **URL**: `http://miksnmp.teamzero.bd`
 - **Default Login**: `admin` / `admin` (You will be prompted to change this on first login).
+
+---
+
+## 9. Adding SSL (HTTPS) with Cloudflare
+
+Since your nameservers are on Cloudflare, you have two great options for enabling SSL. **Method A is highly recommended** because it's easier and the certificate lasts up to 15 years.
+
+### Method A: Cloudflare Origin CA Certificate (Recommended)
+This method assumes your DNS record in Cloudflare is set to **Proxied (Orange Cloud)**.
+
+1. Go to your Cloudflare Dashboard -> **SSL/TLS** -> **Origin Server**.
+2. Click **Create Certificate**. Keep the default settings (RSA) and click **Create**.
+3. You will see an **Origin Certificate** and a **Private Key**. 
+4. On your Ubuntu server, save these to files:
+   ```bash
+   sudo nano /etc/ssl/certs/miksnmp.pem
+   # (Paste the Origin Certificate here and save)
+
+   sudo nano /etc/ssl/private/miksnmp.key
+   # (Paste the Private Key here and save)
+   ```
+5. Enable the Apache SSL module:
+   ```bash
+   sudo a2enmod ssl
+   ```
+6. Update your Apache config (`sudo nano /etc/apache2/sites-available/miksnmp.conf`) to serve on port 443:
+   ```apache
+   <VirtualHost *:443>
+       ServerName miksnmp.teamzero.bd
+       
+       SSLEngine on
+       SSLCertificateFile /etc/ssl/certs/miksnmp.pem
+       SSLCertificateKeyFile /etc/ssl/private/miksnmp.key
+
+       DocumentRoot /var/www/miksnmp/dist
+       <Directory /var/www/miksnmp/dist>
+           Options -Indexes +FollowSymLinks
+           AllowOverride All
+           Require all granted
+           RewriteEngine On
+           RewriteCond %{REQUEST_FILENAME} !-f
+           RewriteCond %{REQUEST_FILENAME} !-d
+           RewriteRule ^ index.html [QSA,L]
+       </Directory>
+
+       ProxyPreserveHost On
+       ProxyPass /api/ http://localhost:3001/api/
+       ProxyPassReverse /api/ http://localhost:3001/api/
+   </VirtualHost>
+   ```
+7. Restart Apache: `sudo systemctl restart apache2`
+8. Finally, go to Cloudflare Dashboard -> **SSL/TLS** -> **Overview** and set the encryption mode to **Full (strict)**.
+
+### Method B: Let's Encrypt (Certbot)
+Use this method if your Cloudflare DNS record is set to **DNS Only (Grey Cloud)**.
+
+1. Install Certbot and the Apache plugin:
+   ```bash
+   sudo apt install -y certbot python3-certbot-apache
+   ```
+2. Run Certbot to automatically configure SSL for your domain:
+   ```bash
+   sudo certbot --apache -d miksnmp.teamzero.bd
+   ```
+3. Follow the prompts. Certbot will automatically edit your `miksnmp.conf` file to add the SSL certificates and setup HTTP-to-HTTPS redirection.
 
 ---
 ### Troubleshooting
 - **Backend Logs**: If the API is failing, check the Node.js logs using `pm2 logs miksnmp-backend`
-- **Nginx Logs**: Check Nginx access/error logs using `sudo tail -f /var/log/nginx/error.log`
+- **Apache Logs**: Check Apache access/error logs using `sudo tail -f /var/log/apache2/miksnmp_error.log`
