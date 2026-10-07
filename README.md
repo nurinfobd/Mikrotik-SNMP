@@ -83,6 +83,7 @@ node alter-db-telegram-columns.js
 node alter-db-desc.js
 node setup-tsdb.js
 node alter-db-users.js
+node alter-db-routers.js
 ```
 *This will create the `users` table and seed the default `admin` / `admin` credentials.*
 
