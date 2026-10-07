@@ -60,6 +60,20 @@ app.post('/api/routers', async (req, res) => {
   }
 });
 
+// Update a router
+app.put('/api/routers/:id', async (req, res) => {
+  const { identity, ip, snmp_comm, snmp_version, os_version } = req.body;
+  try {
+    await pool.query(
+      'UPDATE routers SET identity = ?, ip = ?, snmp_comm = ?, snmp_version = ?, os_version = ? WHERE id = ?',
+      [identity, ip, snmp_comm, snmp_version || 'v2c', os_version || 'v7.0', req.params.id]
+    );
+    res.json({ success: true, id: req.params.id, identity, ip, snmp_comm, snmp_version });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Delete a router
 app.delete('/api/routers/:id', async (req, res) => {
   try {

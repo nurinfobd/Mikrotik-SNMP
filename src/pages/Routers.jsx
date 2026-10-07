@@ -5,11 +5,13 @@ import ReactApexChart from 'react-apexcharts';
 export default function Routers() {
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editRouterId, setEditRouterId] = useState(null);
   
   const [selectedRouter, setSelectedRouter] = useState(null);
   const [routers, setRouters] = useState([]);
   
-  // Add Router Form State
+  // Add/Edit Router Form State
   const [formData, setFormData] = useState({ identity: '', ip: '', snmp_version: 'v2c', snmp_comm: 'public' });
   const [testStatus, setTestStatus] = useState(null); // 'testing', 'success', 'error'
   const [testMessage, setTestMessage] = useState('');
@@ -77,16 +79,40 @@ export default function Routers() {
       return;
     }
     
-    await fetch('/api/routers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
+    if (isEditMode) {
+      await fetch(`/api/routers/${editRouterId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+    } else {
+      await fetch('/api/routers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+    }
     
     setIsAddModalOpen(false);
+    setIsEditMode(false);
+    setEditRouterId(null);
     setFormData({ identity: '', ip: '', snmp_version: 'v2c', snmp_comm: 'public' });
     setTestStatus(null);
     fetchRouters();
+  };
+
+  const openEditRouter = (router) => {
+    setIsEditMode(true);
+    setEditRouterId(router.id);
+    setFormData({
+      identity: router.identity,
+      ip: router.ip,
+      snmp_version: router.snmp_version || 'v2c',
+      snmp_comm: router.snmp_comm
+    });
+    setTestStatus(null);
+    setTestMessage('');
+    setIsAddModalOpen(true);
   };
 
 
@@ -153,7 +179,7 @@ export default function Routers() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Mikrotik Routers</h2>
-        <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}><Plus size={18} /> Add Router</button>
+        <button className="btn btn-primary" onClick={() => { setIsEditMode(false); setFormData({ identity: '', ip: '', snmp_version: 'v2c', snmp_comm: 'public' }); setTestStatus(null); setIsAddModalOpen(true); }}><Plus size={18} /> Add Router</button>
       </div>
 
       <div className="card">
@@ -232,6 +258,7 @@ export default function Routers() {
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="btn" style={{ padding: '6px 10px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)' }} title="Sync Interfaces" onClick={() => openInterfaceSync(router)}><RefreshCw size={16} /></button>
+                        <button className="btn" style={{ padding: '6px 10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)' }} title="Edit" onClick={() => openEditRouter(router)}><Edit2 size={16} /></button>
                         <button className="btn btn-danger" style={{ padding: '6px 10px' }} title="Delete" onClick={() => deleteRouter(router.id)}><Trash2 size={16} /></button>
                       </div>
                     </td>
@@ -246,12 +273,12 @@ export default function Routers() {
         </div>
       </div>
 
-      {/* Add Router Modal */}
+      {/* Add/Edit Router Modal */}
       {isAddModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '500px' }}>
             <button className="modal-close" onClick={() => setIsAddModalOpen(false)}><X size={24} /></button>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '24px' }}>Add New Router</h3>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '24px' }}>{isEditMode ? 'Edit Router' : 'Add New Router'}</h3>
             
             <form onSubmit={handleSaveRouter}>
               <div className="form-group">
