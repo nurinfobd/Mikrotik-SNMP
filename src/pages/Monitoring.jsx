@@ -20,6 +20,9 @@ export default function Monitoring() {
   const [selectedRouterFilter, setSelectedRouterFilter] = useState('');
   const [routers, setRouters] = useState([]);
 
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isReadOnly = currentUser.role === 'readonly';
+
   const fetchInterfaces = () => {
     fetch('/api/interfaces')
       .then(res => res.json())
@@ -272,9 +275,9 @@ export default function Monitoring() {
                 </div>
                 <div style={{ display: 'flex', gap: '4px', background: '#f8fafc', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                   <button className="btn" style={{ padding: '4px', background: 'transparent', color: 'var(--text-secondary)' }} onClick={(e) => { e.stopPropagation(); setHistoricalGraph(iface); }} title="Historical Data"><Activity size={16} /></button>
-                  <button className="btn" style={{ padding: '4px', background: 'transparent', color: 'var(--text-secondary)' }} onClick={(e) => { e.stopPropagation(); setMaxValue(iface.max_traffic || ''); setDescriptionValue(iface.description || ''); setEditingMax(iface); }} title="Edit Settings"><Edit2 size={16} /></button>
+                  {!isReadOnly && <button className="btn" style={{ padding: '4px', background: 'transparent', color: 'var(--text-secondary)' }} onClick={(e) => { e.stopPropagation(); setMaxValue(iface.max_traffic || ''); setDescriptionValue(iface.description || ''); setEditingMax(iface); }} title="Edit Settings"><Edit2 size={16} /></button>}
                   <button className="btn" style={{ padding: '4px', background: 'transparent', color: 'var(--text-secondary)' }} onClick={(e) => { e.stopPropagation(); setSelectedGraph({ ...iface, history }); }} title="Live View"><Maximize2 size={16} /></button>
-                  <button className="btn" style={{ padding: '4px', background: 'transparent', color: '#ef4444' }} onClick={(e) => removeInterface(e, iface.id)} title="Remove from Monitoring"><EyeOff size={16} /></button>
+                  {!isReadOnly && <button className="btn" style={{ padding: '4px', background: 'transparent', color: '#ef4444' }} onClick={(e) => removeInterface(e, iface.id)} title="Remove from Monitoring"><EyeOff size={16} /></button>}
                 </div>
               </div>
               

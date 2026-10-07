@@ -13,6 +13,9 @@ export default function Settings() {
     alert_interface_down: false, alert_router_down: false
   });
 
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isReadOnly = currentUser.role === 'readonly';
+
   useEffect(() => {
     fetchAlerts();
     fetchRouters();
@@ -88,9 +91,11 @@ export default function Settings() {
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Telegram Alert Profiles</h2>
-        <button className="btn btn-primary" onClick={() => openModal()} style={{ padding: '8px 16px', borderRadius: '8px' }}>
-          <Plus size={18} /> Add Alert Profile
-        </button>
+        {!isReadOnly && (
+          <button className="btn btn-primary" onClick={() => openModal()} style={{ padding: '8px 16px', borderRadius: '8px' }}>
+            <Plus size={18} /> Add Alert Profile
+          </button>
+        )}
       </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
@@ -110,12 +115,16 @@ export default function Settings() {
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{alert.name}</h3>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn" style={{ padding: '6px', color: 'var(--text-secondary)', background: '#f1f5f9', borderRadius: '8px' }} onClick={() => openModal(alert)}>
-                  <Edit2 size={16} />
-                </button>
-                <button className="btn" style={{ padding: '6px', color: '#ef4444', background: '#fef2f2', borderRadius: '8px' }} onClick={() => handleDelete(alert.id)}>
-                  <Trash2 size={16} />
-                </button>
+                {!isReadOnly && (
+                  <>
+                    <button className="btn" style={{ padding: '6px', color: 'var(--text-secondary)', background: '#f1f5f9', borderRadius: '8px' }} onClick={() => openModal(alert)}>
+                      <Edit2 size={16} />
+                    </button>
+                    <button className="btn" style={{ padding: '6px', color: '#ef4444', background: '#fef2f2', borderRadius: '8px' }} onClick={() => handleDelete(alert.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

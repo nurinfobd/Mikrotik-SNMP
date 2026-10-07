@@ -24,6 +24,9 @@ export default function Routers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [stats, setStats] = useState({});
 
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isReadOnly = currentUser.role === 'readonly';
+
   useEffect(() => {
     fetchRouters();
     const fetchStats = () => {
@@ -79,26 +82,37 @@ export default function Routers() {
       return;
     }
     
-    if (isEditMode) {
-      await fetch(`/api/routers/${editRouterId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-    } else {
-      await fetch('/api/routers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+    try {
+      let res;
+      if (isEditMode) {
+        res = await fetch(`/api/routers/${editRouterId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+      } else {
+        res = await fetch('/api/routers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+      }
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        alert('Failed to save router: ' + (data.error || 'Unknown error'));
+        return;
+      }
+
+      setIsAddModalOpen(false);
+      setIsEditMode(false);
+      setEditRouterId(null);
+      setFormData({ identity: '', ip: '', snmp_version: 'v2c', snmp_comm: 'public' });
+      setTestStatus(null);
+      fetchRouters();
+    } catch (err) {
+      alert('Network error while saving router: ' + err.message);
     }
-    
-    setIsAddModalOpen(false);
-    setIsEditMode(false);
-    setEditRouterId(null);
-    setFormData({ identity: '', ip: '', snmp_version: 'v2c', snmp_comm: 'public' });
-    setTestStatus(null);
-    fetchRouters();
   };
 
   const openEditRouter = (router) => {
@@ -179,7 +193,9 @@ export default function Routers() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Mikrotik Routers</h2>
-        <button className="btn btn-primary" onClick={() => { setIsEditMode(false); setFormData({ identity: '', ip: '', snmp_version: 'v2c', snmp_comm: 'public' }); setTestStatus(null); setIsAddModalOpen(true); }}><Plus size={18} /> Add Router</button>
+        {!isReadOnly && (
+          <button className="btn btn-primary" onClick={() => { setIsEditMode(false); setFormData({ identity: '', ip: '', snmp_version: 'v2c', snmp_comm: 'public' }); setTestStatus(null); setIsAddModalOpen(true); }}><Plus size={18} /> Add Router</button>
+        )}
       </div>
 
       <div className="card">
@@ -192,7 +208,7 @@ export default function Routers() {
                 <th>Uptime</th>
                 <th>CPU Load</th>
                 <th>Temperature</th>
-                <th>Actions</th>
+                {!isReadOnly && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -255,13 +271,15 @@ export default function Routers() {
                         </div>
                       ) : <span style={{ color: 'var(--text-secondary)' }}>Loading...</span>}
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn" style={{ padding: '6px 10px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)' }} title="Sync Interfaces" onClick={() => openInterfaceSync(router)}><RefreshCw size={16} /></button>
-                        <button className="btn" style={{ padding: '6px 10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)' }} title="Edit" onClick={() => openEditRouter(router)}><Edit2 size={16} /></button>
-                        <button className="btn btn-danger" style={{ padding: '6px 10px' }} title="Delete" onClick={() => deleteRouter(router.id)}><Trash2 size={16} /></button>
-                      </div>
-                    </td>
+                    {!isReadOnly && (
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button className="btn" style={{ padding: '6px 10px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)' }} title="Sync Interfaces" onClick={() => openInterfaceSync(router)}><RefreshCw size={16} /></button>
+                          <button className="btn" style={{ padding: '6px 10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)' }} title="Edit" onClick={() => openEditRouter(router)}><Edit2 size={16} /></button>
+                          <button className="btn btn-danger" style={{ padding: '6px 10px' }} title="Delete" onClick={() => deleteRouter(router.id)}><Trash2 size={16} /></button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

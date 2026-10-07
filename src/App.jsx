@@ -5,6 +5,7 @@ import Routers from './pages/Routers';
 import Monitoring from './pages/Monitoring';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import Users from './pages/Users';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="routers" element={<Routers />} />
           <Route path="monitoring" element={<Monitoring />} />
+          <Route path="users" element={<Users />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
